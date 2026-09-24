@@ -1,9 +1,13 @@
-"""Exact LR-QAOA on the ring, at any size. No 2^n here.
+"""Exact LR-QAOA on the graphs that reduce to something small. No 2^n here.
 
 Ring C_n, n even: free fermions. Flip one sublattice, Jordan-Wigner, and the
 circuit falls apart into n/2 two-level systems, k_m = (2m - 1) pi / n. A layer
 acts on mode k as e^{+2i beta tz} e^{-2i gamma (cos k tz - sin k tx)}, starting
 from the vacuum, and P(x*) = prod_m P(k_m). O(n p).
+
+K(n/2, n/2): two spins of size n/4, H_C = 4 Sz_A Sz_B, dimension (n/2 + 1)^2.
+
+K_n: one spin n/2, H_C = 2 Sz^2 - n/2, dimension n + 1.
 
 Schedules are layer boundaries u[0..p]: gamma_k = u[k+1] dg, beta_k = (1 - u[k]) db.
 The linear ramp is u_k = k / p.
@@ -144,3 +148,50 @@ def first_depth(n, make_u, target=-1.0, dg=DG, db=DB, start=2):
     while ring_log2_success(n, p, dg, db, u=make_u(p)) < target:
         p = max(p + 1, int(p * 1.05))
     return p
+
+
+# ----------------------------------------------------------------------------- large spins
+def spin_ops(m):
+    """Sz (diagonal) and Sx (matrix) of spin m/2, basis M = m/2 .. -m/2."""
+    S = m / 2
+    M = S - np.arange(m + 1)
+    off = 0.5 * np.sqrt(S * (S + 1) - M[:-1] * (M[:-1] - 1))
+    return M, np.diag(off, 1) + np.diag(off, -1)
+
+
+def bipartite_state(n, p, dg=DG, db=DB, u=None):
+    """Probabilities over (M_A, M_B) after the circuit on K(n/2, n/2)."""
+    m = n // 2
+    M, Sx = spin_ops(m)
+    w, V = np.linalg.eigh(Sx)
+    plus = V[:, np.argmax(w)]  # S^x = +m/2, i.e. |+>^m
+    psi = np.outer(plus, plus).astype(complex)
+    zz = 4 * np.outer(M, M)
+    uu = linear_u(p) if u is None else np.asarray(u)
+    for k in range(p):
+        psi = psi * np.exp(-1j * uu[k + 1] * dg * zz)
+        R = (V * np.exp(2j * (1 - uu[k]) * db * w)) @ V.T  # e^{+2i beta S^x}
+        psi = R @ psi @ R.T
+    return np.abs(psi) ** 2
+
+
+def bipartite_success(n, p, dg=DG, db=DB, u=None):
+    q = bipartite_state(n, p, dg, db, u)
+    return float(q[0, -1] + q[-1, 0])
+
+
+def complete_run(n, p, dg=DG, db=DB):
+    """(P(x*), <Sz^2> / random) on K_n. Max cuts are the balanced ones, M = 0."""
+    M, Sx = spin_ops(n)
+    w, V = np.linalg.eigh(Sx)
+    psi = V[:, np.argmax(w)].astype(complex)
+    zz = 2 * M**2 - n / 2
+    for k in range(p):
+        psi = psi * np.exp(-1j * (k + 1) / p * dg * zz)
+        psi = V @ (np.exp(2j * (1 - k / p) * db * w) * (V.T @ psi))
+    pr = np.abs(psi) ** 2
+    return float(pr[n // 2]), float(pr @ M**2) / (n / 4)
+
+
+def complete_success(n, p, dg=DG, db=DB):
+    return complete_run(n, p, dg, db)[0]
