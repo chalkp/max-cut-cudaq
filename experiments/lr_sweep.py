@@ -1,0 +1,150 @@
+"""LR-QAOA depth sweep against size.
+
+Grid: n = 8..28 even, 7 families, p = 5..300 (16 depths), 12 seeds, Delta = (0.6, 0.3).
+Ring and bipartite don't depend on the seed and only run seed 0. P(x*) and the
+mean cut ratio are read off the state vector, no shots.
+
+n is the outer loop, so stopping early still leaves every finished size complete.
+The CSV is the checkpoint; rerun to resume. --hours counts from the first launch
+and is kept in <out>.deadline, delete that file to start a fresh budget.
+
+    python experiments/lr_sweep.py --hours 3
+"""
+
+import argparse
+import csv
+import pathlib
+import sys
+import time
+
+from maxcut_cudaq.graphs import MIN_N, edge_arrays, make_graph
+
+RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
+N_LIST = list(range(8, 29, 2))
+P_LIST = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300]
+# cheap families first
+FAMILIES = ["ring", "ramanujan", "clustered", "bipartite", "erdos_renyi", "euclidean", "dense"]
+SEEDS = list(range(12))
+DETERMINISTIC = {"ring", "bipartite"}
+DG, DB = 0.6, 0.3
+FP32_MIN_N = 22  # fp64 gets several times slower past ~20 qubits on GeForce
+
+FIELDS = [
+    "n_nodes",
+    "family",
+    "seed",
+    "p",
+    "n_edges",
+    "ground_truth",
+    "success_probability",
+    "mean_ratio",
+    "random_success_probability",
+    "precision",
+    "wall_clock_s",
+    "delta_gamma",
+    "delta_beta",
+]
+
+
+def deadline_for(out, hours):
+    f = pathlib.Path(str(out) + ".deadline")
+    if f.exists():
+        return float(f.read_text().strip())
+    d = time.time() + hours * 3600.0
+    f.write_text(str(d))
+    return d
+
+
+def load_done(out):
+    if not pathlib.Path(out).exists():
+        return set()
+    with open(out) as fh:
+        return {
+            (int(r["n_nodes"]), r["family"], int(r["seed"]), int(r["p"]))
+            for r in csv.DictReader(fh)
+        }
+
+
+def worker(args):
+    from maxcut_cudaq import qaoa
+
+    deadline = deadline_for(args.out, args.hours)
+    done = load_done(args.out)
+    print(
+        f"[sweep] {len(done)} runs done; {(deadline - time.time()) / 3600:.2f} h left", flush=True
+    )
+    new = not pathlib.Path(args.out).exists()
+    fh = open(args.out, "a", newline="")
+    wr = csv.DictWriter(fh, fieldnames=FIELDS)
+    if new:
+        wr.writeheader()
+    for n in args.n:
+        qaoa.set_precision("fp32" if n >= args.fp32_min_n else "fp64")
+        for family in args.families:
+            if n < MIN_N.get(family, 0):
+                continue
+            for seed in [0] if family in DETERMINISTIC else args.seeds:
+                todo = [p for p in args.p if (n, family, seed, p) not in done]
+                if not todo:
+                    continue
+                G = make_graph(family, n, seed)
+                P = qaoa.Problem(*edge_arrays(G), n=n)
+                optimum = P.optimum()
+                print(
+                    f"== n={n} {family} seed={seed} edges={G.number_of_edges()} optimum={optimum:g} "
+                    f"[{qaoa.precision()}]",
+                    flush=True,
+                )
+                for p in todo:
+                    if time.time() >= deadline:
+                        print("[budget] wall-clock budget reached.\nSWEEP COMPLETE", flush=True)
+                        return 0
+                    t0 = time.time()
+                    r = P.lr(p, DG, DB)
+                    dt = time.time() - t0
+                    wr.writerow(
+                        dict(
+                            n_nodes=n,
+                            family=family,
+                            seed=seed,
+                            p=p,
+                            n_edges=G.number_of_edges(),
+                            ground_truth=optimum,
+                            success_probability=r["success_probability"],
+                            mean_ratio=r["mean_ratio"],
+                            random_success_probability=2.0 / 2**n,
+                            precision=qaoa.precision(),
+                            wall_clock_s=dt,
+                            delta_gamma=DG,
+                            delta_beta=DB,
+                        )
+                    )
+                    fh.flush()
+                    print(
+                        f"  p={p:4d}: P(x*)={r['success_probability']:.5f} r={r['mean_ratio']:.4f} {dt:7.2f}s",
+                        flush=True,
+                    )
+                del P
+    print(
+        f"[sweep] n={args.n[0]} done" if len(args.n) == 1 else "SWEEP COMPLETE (grid exhausted)",
+        flush=True,
+    )
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--hours", type=float, default=3.0)
+    ap.add_argument("--out", default=str(RESULTS / "lr_p_sweep.csv"))
+    ap.add_argument("--n", nargs="*", type=int, default=N_LIST)
+    ap.add_argument("--p", nargs="*", type=int, default=P_LIST)
+    ap.add_argument("--families", nargs="*", default=FAMILIES)
+    ap.add_argument("--seeds", nargs="*", type=int, default=SEEDS)
+    ap.add_argument("--fp32-min-n", type=int, default=FP32_MIN_N)
+    a = ap.parse_args()
+    RESULTS.mkdir(exist_ok=True)
+    return worker(a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
