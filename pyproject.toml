@@ -36,6 +36,7 @@ maxcut-cudaq = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 sweep = "python experiments/lr_sweep.py"
+fit = "python experiments/lr_sweep.py --fit"
 
 [tool.ruff.lint.per-file-ignores]
 "src/maxcut_cudaq/engine.py" = ["F821"]   # cudaq kernel builtins (h, r1, rx)

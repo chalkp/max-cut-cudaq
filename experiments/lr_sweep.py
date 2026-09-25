@@ -1,4 +1,4 @@
-"""LR-QAOA depth sweep against size.
+"""LR-QAOA depth sweep against size, and the eta(p) fit.
 
 Grid: n = 8..28 even, 7 families, p = 5..300 (16 depths), 12 seeds, Delta = (0.6, 0.3).
 Ring and bipartite don't depend on the seed and only run seed 0. P(x*) and the
@@ -9,6 +9,7 @@ The CSV is the checkpoint; rerun to resume. --hours counts from the first launch
 and is kept in <out>.deadline, delete that file to start a fresh budget.
 
     python experiments/lr_sweep.py --hours 3
+    python experiments/lr_sweep.py --fit           # -> results/lr_p_sweep_eta.csv
 """
 
 import argparse
@@ -16,6 +17,8 @@ import csv
 import pathlib
 import sys
 import time
+
+import numpy as np
 
 from maxcut_cudaq.graphs import MIN_N, edge_arrays, make_graph
 
@@ -132,6 +135,62 @@ def worker(args):
     return 0
 
 
+MIN_SEEDS = 6  # sizes with fewer seeds stay out of a random family's fit
+
+
+def fit_eta(d):
+    """fit_eta() - fit log2 P(x*) = -eta n + C for every (family, p)
+    @d: sweep rows
+
+    Fits the log of the seed mean. Small n sits at P ~ 1 for deep circuits,
+    which drags eta down at large p; check r2 before trusting it there.
+
+    Return: DataFrame with eta, C, r2, sizes, dropped_thin and n_max.
+    """
+    import pandas as pd
+
+    rows = []
+    for (fam, p), g in d.groupby(["family", "p"]):
+        counts = g.groupby("n_nodes")["success_probability"].count()
+        m = g.groupby("n_nodes")["success_probability"].mean()
+        need = 1 if fam in DETERMINISTIC else MIN_SEEDS
+        thin = int((counts < need).sum())
+        m = m[(counts >= need) & (m > 0)]
+        if len(m) < 3:
+            rows.append(
+                dict(
+                    family=fam,
+                    p=p,
+                    eta=np.nan,
+                    C=np.nan,
+                    r2=np.nan,
+                    sizes=len(m),
+                    dropped_thin=thin,
+                    n_max=int(m.index.max()) if len(m) else 0,
+                )
+            )
+            continue
+        x, y = m.index.values.astype(float), np.log2(m.values)
+        slope, icept = np.polyfit(x, y, 1)
+        ss_res, ss_tot = (
+            float(((y - slope * x - icept) ** 2).sum()),
+            float(((y - y.mean()) ** 2).sum()),
+        )
+        rows.append(
+            dict(
+                family=fam,
+                p=p,
+                eta=-slope,
+                C=icept,
+                r2=1 - ss_res / ss_tot if ss_tot > 0 else np.nan,
+                sizes=len(m),
+                dropped_thin=thin,
+                n_max=int(m.index.max()),
+            )
+        )
+    return pd.DataFrame(rows).sort_values(["family", "p"])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=float, default=3.0)
@@ -141,8 +200,17 @@ def main():
     ap.add_argument("--families", nargs="*", default=FAMILIES)
     ap.add_argument("--seeds", nargs="*", type=int, default=SEEDS)
     ap.add_argument("--fp32-min-n", type=int, default=FP32_MIN_N)
+    ap.add_argument("--fit", action="store_true", help="fit eta(p) on the CSV and exit")
     a = ap.parse_args()
     RESULTS.mkdir(exist_ok=True)
+    if a.fit:
+        import pandas as pd
+
+        fits = fit_eta(pd.read_csv(a.out))
+        path = pathlib.Path(a.out).with_name(pathlib.Path(a.out).stem + "_eta.csv")
+        fits.to_csv(path, index=False)
+        print(fits.round(4).to_string(index=False), f"\nwrote {path}")
+        return 0
     return worker(a)
 
 
