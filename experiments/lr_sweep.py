@@ -15,6 +15,7 @@ and is kept in <out>.deadline, delete that file to start a fresh budget.
 import argparse
 import csv
 import pathlib
+import subprocess
 import sys
 import time
 
@@ -81,6 +82,7 @@ def worker(args):
     wr = csv.DictWriter(fh, fieldnames=FIELDS)
     if new:
         wr.writeheader()
+    completed = 0
     for n in args.n:
         qaoa.set_precision("fp32" if n >= args.fp32_min_n else "fp64")
         for family in args.families:
@@ -123,10 +125,14 @@ def worker(args):
                         )
                     )
                     fh.flush()
+                    completed += 1
                     print(
                         f"  p={p:4d}: P(x*)={r['success_probability']:.5f} r={r['mean_ratio']:.4f} {dt:7.2f}s",
                         flush=True,
                     )
+                    if completed >= args.max_runs:
+                        print(f"[batch] {completed} runs; recycling the process.", flush=True)
+                        return 7
                 del P
     print(
         f"[sweep] n={args.n[0]} done" if len(args.n) == 1 else "SWEEP COMPLETE (grid exhausted)",
@@ -194,12 +200,19 @@ def fit_eta(d):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=float, default=3.0)
+    ap.add_argument(
+        "--max-runs",
+        type=int,
+        default=400,
+        help="worker exits 7 after this many runs; the supervisor restarts it",
+    )
     ap.add_argument("--out", default=str(RESULTS / "lr_p_sweep.csv"))
     ap.add_argument("--n", nargs="*", type=int, default=N_LIST)
     ap.add_argument("--p", nargs="*", type=int, default=P_LIST)
     ap.add_argument("--families", nargs="*", default=FAMILIES)
     ap.add_argument("--seeds", nargs="*", type=int, default=SEEDS)
     ap.add_argument("--fp32-min-n", type=int, default=FP32_MIN_N)
+    ap.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     ap.add_argument("--fit", action="store_true", help="fit eta(p) on the CSV and exit")
     a = ap.parse_args()
     RESULTS.mkdir(exist_ok=True)
@@ -211,7 +224,38 @@ def main():
         fits.to_csv(path, index=False)
         print(fits.round(4).to_string(index=False), f"\nwrote {path}")
         return 0
-    return worker(a)
+    if a.worker:
+        return worker(a)
+    # A long-lived cudaq process keeps growing on the host, so the worker
+    # exits 7 every --max-runs runs and gets restarted.
+    passthrough = [
+        "--hours",
+        str(a.hours),
+        "--max-runs",
+        str(a.max_runs),
+        "--out",
+        a.out,
+        "--fp32-min-n",
+        str(a.fp32_min_n),
+        "--p",
+        *map(str, a.p),
+        "--families",
+        *a.families,
+        "--seeds",
+        *map(str, a.seeds),
+    ]
+    for n in a.n:
+        while True:
+            code = subprocess.call(
+                [sys.executable, __file__, "--worker", "--n", str(n), *passthrough]
+            )
+            if code != 7:
+                break
+        if code != 0:
+            return code
+        if time.time() >= deadline_for(a.out, a.hours):
+            break
+    return 0
 
 
 if __name__ == "__main__":
