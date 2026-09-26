@@ -31,10 +31,14 @@ def worker_pool(jobs, max_tasks=None, executor=False):
     @executor: return a ProcessPoolExecutor instead of a Pool
 
     Workers are spawned, not forked (CUDA does not survive a fork). Long-lived
-    CUDA-Q processes keep growing on the host, hence @max_tasks.
+    CUDA-Q processes keep growing on the host, hence @max_tasks. BLAS threads
+    are capped at cores / jobs so the eigensolvers do not fight each other.
     """
     import multiprocessing
 
+    threads = str(max(1, (os.cpu_count() or 1) // max(1, jobs)))
+    for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        os.environ[var] = threads  # inherited by the spawned workers
     ctx = multiprocessing.get_context("spawn")
     if executor:
         from concurrent.futures import ProcessPoolExecutor
