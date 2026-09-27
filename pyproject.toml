@@ -40,6 +40,7 @@ fit = "python experiments/lr_sweep.py --fit"
 pilot = "python experiments/gap_pilot.py"
 depth-matched = "python experiments/depth_matched.py"
 q1-q5-q6 = "python experiments/q1_q5_q6.py"
+limits = "python experiments/delta_limits.py"
 
 [tool.ruff.lint.per-file-ignores]
 "src/maxcut_cudaq/engine.py" = ["F821"]   # cudaq kernel builtins (h, r1, rx)
