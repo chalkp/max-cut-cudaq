@@ -38,6 +38,7 @@ maxcut-cudaq = { path = ".", editable = true }
 sweep = "python experiments/lr_sweep.py"
 fit = "python experiments/lr_sweep.py --fit"
 pilot = "python experiments/gap_pilot.py"
+depth-matched = "python experiments/depth_matched.py"
 
 [tool.ruff.lint.per-file-ignores]
 "src/maxcut_cudaq/engine.py" = ["F821"]   # cudaq kernel builtins (h, r1, rx)
