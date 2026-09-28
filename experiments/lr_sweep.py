@@ -14,6 +14,7 @@ and is kept in <out>.deadline, delete that file to start a fresh budget.
 
 import argparse
 import csv
+import os
 import pathlib
 import subprocess
 import sys
@@ -226,8 +227,11 @@ def main():
         return 0
     if a.worker:
         return worker(a)
-    # A long-lived cudaq process keeps growing on the host, so the worker
-    # exits 7 every --max-runs runs and gets restarted.
+    # One worker per size, so each gets its own fusion settings (cudaq reads
+    # them only at import). A long-lived cudaq process keeps growing on the
+    # host, so the worker exits 7 every --max-runs runs and gets restarted.
+    from maxcut_cudaq import fusion_env
+
     passthrough = [
         "--hours",
         str(a.hours),
@@ -247,7 +251,8 @@ def main():
     for n in a.n:
         while True:
             code = subprocess.call(
-                [sys.executable, __file__, "--worker", "--n", str(n), *passthrough]
+                [sys.executable, __file__, "--worker", "--n", str(n), *passthrough],
+                env={**os.environ, **fusion_env(n, "fp32" if n >= a.fp32_min_n else "fp64")},
             )
             if code != 7:
                 break

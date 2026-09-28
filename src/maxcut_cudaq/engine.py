@@ -4,10 +4,22 @@ Only imported once a circuit actually runs on CUDA-Q, so numpy-only workers neve
 load cudaq or touch the GPU.
 """
 
-import cudaq
-import cupy as cp
+import os
 
-from . import gpu
+from . import fusion_env
+
+# CUDA-Q only reads the fusion knobs at import time, so they go in first. Tuned
+# for MAXCUT_FUSION_N qubits (default 18). Anything already in the environment
+# wins; lr_sweep.py starts one worker per size with its own settings.
+for _k, _v in fusion_env(
+    int(os.environ.get("MAXCUT_FUSION_N", 18)), os.environ.get("MAXCUT_PRECISION", "fp64")
+).items():
+    os.environ.setdefault(_k, _v)
+
+import cudaq  # noqa: E402
+import cupy as cp  # noqa: E402
+
+from . import gpu  # noqa: E402
 
 LEGACY_MAX_N = 17  # nvidia-legacy has less per-gate overhead up to here
 

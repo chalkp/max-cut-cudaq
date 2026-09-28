@@ -24,6 +24,28 @@ def _preload_nvrtc():
 _preload_nvrtc()
 
 
+def fusion_env(n, precision="fp64"):
+    """fusion_env() - cusvsim gate fusion settings for an n-qubit circuit
+    @n: number of qubits
+    @precision: 'fp32' or 'fp64'
+
+    fp32 fuses up to 5 qubits and diagonal runs up to 16. In fp64 a fused dense
+    block is compute bound on GeForce parts, so only diagonal gates get fused,
+    up to max(12, min(20, n - 8)) qubits.
+
+    CUDA-Q reads these once, when it is imported. They have to be in the
+    environment before ``import cudaq``.
+
+    Return: dict of CUDAQ_FUSION_* variables.
+    """
+    if precision == "fp32":
+        return {"CUDAQ_FUSION_MAX_QUBITS": "5", "CUDAQ_FUSION_DIAGONAL_GATE_MAX_QUBITS": "16"}
+    return {
+        "CUDAQ_FUSION_MAX_QUBITS": "1",
+        "CUDAQ_FUSION_DIAGONAL_GATE_MAX_QUBITS": str(max(12, min(20, n - 8))),
+    }
+
+
 def worker_pool(jobs, max_tasks=None, executor=False):
     """worker_pool() - process pool for the experiment scripts
     @jobs: number of workers
