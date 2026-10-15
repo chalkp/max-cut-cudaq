@@ -7,7 +7,6 @@ vector runs on the rest.
 ```
 src/maxcut_cudaq/
   graphs.py    graph families + weighted complete graphs
-  exact.py     ring free-fermion formula, one- and two-spin models, gap-power schedules
   qaoa.py      Problem: circuit + exact P(x*) / mean cut ratio
   engine.py    CUDA-Q kernel, target selection, on-device readout
   gpu.py       cut values of all 2^n bitstrings, zero-copy state view
@@ -27,22 +26,10 @@ pixi install            # or: uv sync
 
 | task | script | output |
 |---|---|---|
-| `sweep` | `lr_sweep.py` | LR p-sweep, n = 8..28, 7 families -> `lr_p_sweep.csv` |
-| `fit` | `lr_sweep.py --fit` | eta(p) fits -> `lr_p_sweep_eta.csv` |
 | `pilot` | `gap_pilot.py` | gap location, gap-adapted vs linear schedule -> `gap_pilot.csv` |
 | `depth-matched` | `depth_matched.py` | LR vs COBYLA at equal depth -> `depth_matched.csv` |
-| `q1-q5-q6` | `q1_q5_q6.py` | Q1 schedule depths, Q5 best Delta, Q6 threshold -> `q5_q1_numbers.json` |
-| `limits` | `delta_limits.py` | the three limits on Delta_gamma -> `q5_q1_numbers.json` |
-| `solvable` | `solvable_models.py` | ring / spin model checks -> `verification_numbers.json` |
-| `figures` | `figures.py` | `results/figures/` |
 
-`pixi run <task>`, or `python experiments/<script>.py`. `solvable` and `figures`
-read the sweep and pilot output, so run those first.
-
-The full sweep is ~5 GPU-hours on an RTX 3080 (`pixi run sweep --hours 6`). It
-restarts its worker every few hundred circuits and resumes from the CSV, so it can be
-killed and restarted. The hour budget is stored in `results/lr_p_sweep.csv.deadline`;
-delete it to start a new one.
+`pixi run <task>`, or `python experiments/<script>.py`.
 
 ## Knobs
 
