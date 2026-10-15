@@ -27,8 +27,8 @@ import pandas as pd
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
-from maxcut_cudaq import worker_pool
-from maxcut_cudaq.graphs import MIN_N, edge_arrays, make_graph
+from maxcut_qiskit import worker_pool
+from maxcut_qiskit.graphs import MIN_N, edge_arrays, make_graph
 
 DG, DB = 0.6, 0.3
 U_GRID = np.linspace(0.0, 1.0, 51)
@@ -47,7 +47,7 @@ FAMILIES = [
 
 
 def instance(family, n, seed):
-    from maxcut_cudaq.qaoa import Problem
+    from maxcut_qiskit.qaoa import Problem
 
     G = make_graph(family, n, seed)
     return Problem(*edge_arrays(G), n=G.number_of_nodes())
@@ -79,7 +79,9 @@ def spectrum_along_path(HM, hc_even, m, k_extra=10):
     XXX: near u = 0 the first excited level is hugely degenerate and only
     m + k_extra pairs are computed, so eigsh's random start vector decides
     which part of the multiplet ends up in A. The adiabatic arm is not
-    reproducible run to run there. The gap itself is.
+    reproducible run to run there. The gap itself is. The same random start
+    now and then keeps eigsh from converging; it is retried from a fresh one,
+    since the error does not survive the trip back from a pool worker.
     """
     half = hc_even.size
     k = min(m + k_extra, half - 2)
@@ -88,7 +90,14 @@ def spectrum_along_path(HM, hc_even, m, k_extra=10):
     v0 = None
     for i, u in enumerate(U_GRID):
         H = (1 - u) * DB * HM + u * DG * sp.diags(hc_even)
-        E, W = spla.eigsh(H, k=k, which="SA", v0=v0, tol=1e-9, maxiter=20000)
+        for attempt in range(3):
+            try:
+                E, W = spla.eigsh(H, k=k, which="SA", v0=v0, tol=1e-9, maxiter=20000)
+                break
+            except spla.ArpackNoConvergence:
+                if attempt == 2:
+                    raise RuntimeError(f"eigsh did not converge at u = {u}") from None
+                v0 = None
         o = np.argsort(E)
         E, W = E[o], W[:, o]
         v0 = W[:, 0]

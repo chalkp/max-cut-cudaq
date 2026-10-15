@@ -1,22 +1,24 @@
-# max-cut-cudaq
+# max-cut-qiskit
 
-LR-QAOA (linear-ramp QAOA) for MaxCut. Exact results on graphs that reduce to
-something small (ring, complete bipartite, complete), checked against CUDA-Q state
-vector runs on the rest.
+Qiskit fork of [max-cut-cudaq](https://github.com/chalkp/max-cut-cudaq): the same
+graphs and LR-QAOA circuits, with the CUDA-Q kernels swapped for Qiskit Aer so
+they can go to IBM hardware. The simulator-only studies (the full p-sweep,
+fits, figures) stay upstream.
 
 ```
-src/maxcut_cudaq/
-  graphs.py    graph families + weighted complete graphs
-  qaoa.py      Problem: circuit + exact P(x*) / mean cut ratio
-  engine.py    CUDA-Q kernel, target selection, on-device readout
-  gpu.py       cut values of all 2^n bitstrings, zero-copy state view
-  cpu.py       numpy state vector for small n
+src/maxcut_qiskit/
+  graphs.py    graph families, same as upstream
+  qaoa.py      Problem: exact P(x*) and mean cut ratio, numpy or Aer
+  aer.py       Aer circuit and simulator, on-device readout
+  cpu.py       cut values of all 2^n bitstrings, numpy state vector for small n
 experiments/   one script per study, writes to results/
 ```
 
 ## Install
 
-Linux x86-64, NVIDIA GPU, CUDA 13 driver.
+Linux x86-64. An NVIDIA GPU is used when there is one (`qiskit-aer-gpu-cu11`,
+CUDA 11 runtime); without one Aer runs on the CPU. Both lock files resolve
+against packages published before 2026-10-15 (`exclude-newer`).
 
 ```
 pixi install            # or: uv sync
@@ -35,7 +37,5 @@ pixi install            # or: uv sync
 
 | variable | |
 |---|---|
-| `MAXCUT_BACKEND` | `auto` (numpy below ~13 dense qubits, else CUDA-Q), `cudaq`, `numpy` |
-| `MAXCUT_PRECISION` | `fp64` (default) or `fp32`, above 17 qubits |
-| `MAXCUT_FUSION_N` | size the CUDA-Q fusion settings are tuned for at import (default 18) |
-| `CUDAQ_FUSION_*` | override `maxcut_cudaq.fusion_env` |
+| `MAXCUT_BACKEND` | `auto` (numpy below ~14 dense qubits, else Aer), `aer`, `numpy` |
+| `MAXCUT_PRECISION` | `fp64` (default) or `fp32`, Aer circuits only |

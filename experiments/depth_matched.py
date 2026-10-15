@@ -17,19 +17,22 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
-from maxcut_cudaq import worker_pool
-from maxcut_cudaq.graphs import MIN_N, edge_arrays, make_graph
+from maxcut_qiskit import worker_pool
+from maxcut_qiskit.graphs import MIN_N, edge_arrays, make_graph
 
 OUT = pathlib.Path(__file__).resolve().parents[1] / "results" / "depth_matched.csv"
 FAMILIES = ["ring", "ramanujan", "clustered", "bipartite", "erdos_renyi", "euclidean", "dense"]
 
 
-def cell(args):
-    from maxcut_cudaq.qaoa import Problem
+def optimize(P, p, seed):
+    """optimize() - COBYLA angles for one instance, on the exact state
+    @P: the Problem
+    @p: number of layers
+    @seed: seeds the random start
 
-    n, family, seed, p = args
-    P = Problem(*edge_arrays(make_graph(family, n, seed)), n=n)
-    P.optimum()
+    Return: (gammas, betas, scipy result, number of evaluations), angles in the
+    circuit's convention.
+    """
 
     def native(theta):
         # optimizer works in raw weights with mixer rx(2 beta) = e^{-i beta X}
@@ -44,7 +47,17 @@ def cell(args):
     np.random.seed(seed)
     x0 = np.random.uniform(0, np.pi, 2 * p)
     res = minimize(cost, x0, method="COBYLA", options={"maxiter": max(150, 5 * 2 * p)})
-    opt = P.evaluate(*native(res.x))
+    return *native(res.x), res, calls[0]
+
+
+def cell(args):
+    from maxcut_qiskit.qaoa import Problem
+
+    n, family, seed, p = args
+    P = Problem(*edge_arrays(make_graph(family, n, seed)), n=n)
+    P.optimum()
+    g, b, res, calls = optimize(P, p, seed)
+    opt = P.evaluate(g, b)
     lr = P.lr(p)
     return dict(
         n_nodes=n,
@@ -55,7 +68,7 @@ def cell(args):
         cobyla_success_probability=opt["success_probability"],
         cobyla_mean_ratio=opt["mean_ratio"],
         cobyla_final_energy=float(res.fun),
-        cobyla_evaluations=calls[0],
+        cobyla_evaluations=calls,
         lr_success_probability=lr["success_probability"],
         lr_mean_ratio=lr["mean_ratio"],
         backend=P.describe(),
