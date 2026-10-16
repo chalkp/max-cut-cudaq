@@ -56,6 +56,7 @@ pixi run hardware sweep --backend fake_fez --noiseless             # same circui
 pixi run hardware sweep --backend ibm_fez                          # estimate only
 pixi run hardware sweep --backend ibm_fez --submit                 # job ids -> results/hardware
 pixi run hardware collect results/hardware/sweep_ibm_fez.json
+pixi run compare --hardware results/hardware/sweep_fake_fez_ideal.json   # vs CUDA-Q
 ```
 
 Dense graphs go through a swap network on a line of good qubits, sparse ones
