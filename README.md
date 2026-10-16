@@ -11,6 +11,7 @@ src/maxcut_qiskit/
   qaoa.py      Problem: exact P(x*) and mean cut ratio, numpy or Aer
   aer.py       Aer circuit and simulator (cuStateVec), on-device readout
   cpu.py       cut values of all 2^n bitstrings, numpy state vector for small n
+  ibm.py       device circuits: swap network or SABRE, ISA transpile, SamplerV2
 experiments/   one script per study, writes to results/
 ```
 
@@ -30,6 +31,7 @@ pixi install            # or: uv sync
 |---|---|---|
 | `pilot` | `gap_pilot.py` | gap location, gap-adapted vs linear schedule -> `gap_pilot.csv` |
 | `depth-matched` | `depth_matched.py` | LR vs COBYLA at equal depth -> `depth_matched.csv` |
+| `hardware` | `hardware.py` | sweep / pilot / depth-matched on an IBM device -> `hardware/` |
 | `compare` | `compare_cudaq.py` | random circuits, states and sweep rows vs upstream -> `compare_cudaq.json` |
 
 `pixi run <task>`, or `python experiments/<script>.py`.
@@ -37,6 +39,27 @@ pixi install            # or: uv sync
 `compare` runs the CUDA-Q side in upstream's environment: the superproject when
 this repo is its `max-cut-qiskit` submodule, `../max-cut-cudaq` otherwise
 (`--cudaq PATH` to override).
+
+## Hardware
+
+Save an IBM Quantum account once, in your own terminal:
+
+```
+pixi run python -c "from qiskit_ibm_runtime import QiskitRuntimeService as S; \
+  S.save_account(channel='ibm_quantum_platform', token='<API key>', instance='<CRN>', set_as_default=True)"
+```
+
+```
+pixi run hardware sweep --backend fake_fez --n 8 10 --p 1 2 3 5   # local noise model
+pixi run hardware sweep --backend fake_fez --noiseless             # same circuits, ideal
+pixi run hardware sweep --backend ibm_fez                          # estimate only
+pixi run hardware sweep --backend ibm_fez --submit                 # job ids -> results/hardware
+pixi run hardware collect results/hardware/sweep_ibm_fez.json
+```
+
+Dense graphs go through a swap network on a line of good qubits, sparse ones
+through SABRE, whichever needs fewer two-qubit gates; fractional `rzz` is used
+where the device has it. Dynamical decoupling on, twirling off (`--twirl`).
 
 ## Knobs
 

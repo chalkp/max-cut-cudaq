@@ -15,6 +15,26 @@ from scipy.sparse.csgraph import reverse_cuthill_mckee
 TWO_Q = ("rzz", "cz", "ecr", "cx")
 
 
+def backend(name, fractional=True):
+    """backend() - a device, or fake_<device> for Qiskit's shipped snapshot of it
+    @name: 'ibm_fez', 'fake_fez', ...
+    @fractional: ask for fractional gates (Heron only)
+    """
+    if name.startswith("fake_"):
+        from qiskit_ibm_runtime import fake_provider
+
+        return getattr(fake_provider, "Fake" + name[5:].title().replace("_", ""))()
+    from qiskit_ibm_runtime import QiskitRuntimeService
+
+    service = QiskitRuntimeService()
+    if fractional:
+        try:
+            return service.backend(name, use_fractional_gates=True)
+        except Exception:  # not every device has them
+            pass
+    return service.backend(name)
+
+
 def _edges(P):
     w = {}
     for i, j, x in zip(P.src.tolist(), P.tgt.tolist(), P.wn.tolist()):
@@ -178,3 +198,46 @@ def _fold_phase_gates(qc):
         else:
             out.append(inst)
     return out
+
+
+def score(P, bits):
+    """score() - P(x*), mean cut ratio and expected cut from sampled bits
+    @P: the Problem
+    @bits: a BitArray (pub_result.data.meas)
+    """
+    counts = bits.get_int_counts()
+    idx = np.fromiter(counts.keys(), dtype=np.int64, count=len(counts))
+    c = np.fromiter(counts.values(), dtype=float, count=len(counts))
+    shots = c.sum()
+    cuts, opt = P.cuts(), P.optimal_indices()
+    ec = float(c @ cuts[idx]) / shots
+    sd = math.sqrt(max(0.0, float(c @ cuts[idx] ** 2) / shots - ec**2))
+    return dict(
+        success_probability=float(c[np.isin(idx, opt)].sum()) / shots,
+        mean_ratio=ec / P.best,
+        mean_ratio_err=sd / math.sqrt(shots) / abs(P.best),
+        expected_cut=ec,
+        shots=int(shots),
+    )
+
+
+def qpu_seconds(isa, target, shots, rep_delay=250e-6):
+    try:
+        t = isa.estimate_duration(target, unit="s")
+    except Exception:
+        t = 0.0
+    return shots * (t + rep_delay)
+
+
+def sampler(mode, dd=True, twirl=False):
+    from qiskit_ibm_runtime import SamplerV2
+
+    s = SamplerV2(mode=mode)
+    if getattr(mode, "name", "").startswith("fake"):
+        return s  # local testing mode takes no device options
+    s.options.dynamical_decoupling.enable = dd
+    if dd:
+        s.options.dynamical_decoupling.sequence_type = "XpXm"
+    s.options.twirling.enable_gates = twirl
+    s.options.twirling.enable_measure = twirl
+    return s
