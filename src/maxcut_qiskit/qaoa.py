@@ -122,11 +122,3 @@ class Problem:
     def energy(self, gammas, betas):
         """<sum w ZZ> with the original weights."""
         return float(self.w.sum()) - 2.0 * self.evaluate(gammas, betas)["expected_cut"]
-
-    def describe(self):
-        """Backend tag for the output files."""
-        if self.backend == "numpy":
-            return "numpy-fp64"
-        from . import aer
-
-        return f"aer-{aer.device()}-{_PRECISION}"

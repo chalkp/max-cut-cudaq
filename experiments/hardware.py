@@ -1,9 +1,8 @@
 """LR-QAOA on IBM Quantum hardware, scored against the exact simulator.
 
   sweep           LR ramp, Delta = (0.6, 0.3), P(x*) and cut ratio against p
-  pilot           linear vs gap-adapted vs the two cubic schedules (gap_pilot.py)
+  pilot           linear vs gap-adapted vs the two cubic schedules
   depth-matched   LR against COBYLA angles optimised on the exact state
-                  (depth_matched.py), both run on the device
 
 Each cell (instance, angles) is one ISA circuit and one PUB. A fake_* backend
 runs at once on its local noise model. A real device only gets an estimate
@@ -25,14 +24,15 @@ import pathlib
 import sys
 import time
 
-from maxcut_qiskit import ibm
+from maxcut_qiskit import ibm, schedules
 from maxcut_qiskit.graphs import MIN_N, edge_arrays, make_graph
-from maxcut_qiskit.qaoa import Problem, angles
+from maxcut_qiskit.qaoa import DB, DG, Problem, angles
 
 OUT = pathlib.Path(__file__).resolve().parents[1] / "results" / "hardware"
 FAMILIES = ["ring", "ramanujan", "clustered", "bipartite", "erdos_renyi", "euclidean", "dense"]
+PILOT_FAMILIES = ["ring", "bipartite", "ramanujan", "irregular", "clustered", "erdos_renyi"]
+PILOT_FAMILIES += ["euclidean", "heterogeneous_weight", "dense"]
 DETERMINISTIC = {"ring", "bipartite"}
-DG, DB = 0.6, 0.3
 
 _problems = {}
 
@@ -60,27 +60,21 @@ def sweep_cells(a):
 
 
 def pilot_cells(a):
-    import gap_pilot as gp
-
-    for family, n, seed in instances(a, a.families or gp.FAMILIES):
-        P = problem(family, n, seed)
-        HM, hc_even = gp.even_sector(n, P.hc_host())
-        _, A = gp.spectrum_along_path(HM, hc_even, int(P.optimal_mask_host().sum()) // 2)
+    for family, n, seed in instances(a, a.families or PILOT_FAMILIES):
+        A = schedules.leak_weight(problem(family, n, seed))
         for p in a.p:
-            for name in ("linear", "adiabatic", "slow_middle", "slow_ends"):
-                u = gp.schedule(name, p, A)
+            for name in schedules.NAMES:
+                u = schedules.schedule(name, p, A)
                 yield dict(family=family, n=n, seed=seed, p=p, schedule=name), angles(p, u=u)
 
 
 def depth_matched_cells(a):
-    import depth_matched as dm
-
     for family, n, seed in instances(a, a.families or FAMILIES):
         P = problem(family, n, seed)
         for p in a.p:
-            g, b, _, _ = dm.optimize(P, p, seed)
-            yield dict(family=family, n=n, seed=seed, p=p, schedule="cobyla"), (g, b)
-            yield dict(family=family, n=n, seed=seed, p=p, schedule="linear"), angles(p, DG, DB)
+            cell = dict(family=family, n=n, seed=seed, p=p)
+            yield dict(cell, schedule="cobyla"), schedules.cobyla(P, p, seed)
+            yield dict(cell, schedule="linear"), angles(p, DG, DB)
 
 
 STUDIES = {

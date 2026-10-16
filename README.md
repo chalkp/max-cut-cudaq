@@ -7,12 +7,15 @@ fits, figures) stay upstream.
 
 ```
 src/maxcut_qiskit/
-  graphs.py    graph families, same as upstream
-  qaoa.py      Problem: exact P(x*) and mean cut ratio, numpy or Aer
-  aer.py       Aer circuit and simulator (cuStateVec), on-device readout
-  cpu.py       cut values of all 2^n bitstrings, numpy state vector for small n
-  ibm.py       device circuits: swap network or SABRE, ISA transpile, SamplerV2
-experiments/   one script per study, writes to results/
+  graphs.py     graph families, same as upstream
+  qaoa.py       Problem: exact P(x*) and mean cut ratio, numpy or Aer
+  aer.py        Aer circuit and simulator (cuStateVec), on-device readout
+  cpu.py        cut values of all 2^n bitstrings, numpy state vector for small n
+  schedules.py  gap-adapted and cubic schedules, COBYLA baseline angles
+  ibm.py        device circuits: swap network or SABRE, ISA transpile, SamplerV2
+experiments/
+  hardware.py       sweep / pilot / depth-matched on an IBM device
+  compare_cudaq.py  random circuits, states and sweep rows vs upstream
 ```
 
 ## Install
@@ -29,8 +32,6 @@ pixi install            # or: uv sync
 
 | task | script | output |
 |---|---|---|
-| `pilot` | `gap_pilot.py` | gap location, gap-adapted vs linear schedule -> `gap_pilot.csv` |
-| `depth-matched` | `depth_matched.py` | LR vs COBYLA at equal depth -> `depth_matched.csv` |
 | `hardware` | `hardware.py` | sweep / pilot / depth-matched on an IBM device -> `hardware/` |
 | `compare` | `compare_cudaq.py` | random circuits, states and sweep rows vs upstream -> `compare_cudaq.json` |
 
