@@ -41,3 +41,4 @@ maxcut-qiskit = { path = ".", editable = true }
 [tool.pixi.tasks]
 pilot = "python experiments/gap_pilot.py"
 depth-matched = "python experiments/depth_matched.py"
+compare = "python experiments/compare_cudaq.py"

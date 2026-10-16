@@ -9,7 +9,7 @@ fits, figures) stay upstream.
 src/maxcut_qiskit/
   graphs.py    graph families, same as upstream
   qaoa.py      Problem: exact P(x*) and mean cut ratio, numpy or Aer
-  aer.py       Aer circuit and simulator, on-device readout
+  aer.py       Aer circuit and simulator (cuStateVec), on-device readout
   cpu.py       cut values of all 2^n bitstrings, numpy state vector for small n
 experiments/   one script per study, writes to results/
 ```
@@ -30,8 +30,13 @@ pixi install            # or: uv sync
 |---|---|---|
 | `pilot` | `gap_pilot.py` | gap location, gap-adapted vs linear schedule -> `gap_pilot.csv` |
 | `depth-matched` | `depth_matched.py` | LR vs COBYLA at equal depth -> `depth_matched.csv` |
+| `compare` | `compare_cudaq.py` | random circuits, states and sweep rows vs upstream -> `compare_cudaq.json` |
 
 `pixi run <task>`, or `python experiments/<script>.py`.
+
+`compare` runs the CUDA-Q side in upstream's environment: the superproject when
+this repo is its `max-cut-qiskit` submodule, `../max-cut-cudaq` otherwise
+(`--cudaq PATH` to override).
 
 ## Knobs
 
