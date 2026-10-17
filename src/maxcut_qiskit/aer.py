@@ -41,10 +41,6 @@ def simulator(precision):
     )
 
 
-def device():
-    return simulator("fp64").options.device.lower()
-
-
 def run(qc, precision):
     res = simulator(precision).run(qc).result()
     if not res.success:

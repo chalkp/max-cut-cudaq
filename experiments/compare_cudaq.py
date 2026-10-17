@@ -4,6 +4,9 @@
   state    n = 11..20, the state vector, P(x*) and expected cut: Aer vs CUDA-Q
   sweep    rows of upstream's lr_p_sweep.csv (dense up to n = 28), rerun here
 
+--hardware reruns the cells of a hardware.py run on CUDA-Q instead and sets
+them against what the device (or its model) measured.
+
 CUDA-Q builds e^{-itZZ} from r1/cr1 and drops e^{-it}, so its matrices carry a
 global phase e^{+i sum_k gamma_k sum wn}, taken out before comparing. Its
 get_unitary puts qubit 0 in the top bit, its states in the bottom bit.
@@ -13,7 +16,7 @@ with --dump and reads the arrays back. Upstream is the superproject when this
 repo is checked out as its submodule, else ../max-cut-cudaq.
 
     compare_cudaq.py
-    compare_cudaq.py --unitary 10 --state 5 --sweep 0
+    compare_cudaq.py --hardware results/hardware/sweep_fake_fez_ideal.json
 """
 
 import argparse
@@ -229,6 +232,59 @@ def compare_sweep(rng, upstream, count):
     return rows
 
 
+def compare_hardware(manifest, upstream):
+    """compare_hardware() - a hardware.py run against CUDA-Q
+    @manifest: the results/hardware/*.json written by hardware.py
+    @upstream: the CUDA-Q project
+
+    Every cell is rerun on the CUDA-Q state vector with the same angles. z is
+    shot noise only, so ~N(0, 1) on a noiseless model and a noise signal on
+    a device.
+    """
+    import pandas as pd
+
+    from maxcut_qiskit.graphs import edge_arrays, make_graph
+
+    m = json.loads(pathlib.Path(manifest).read_text())
+    hw = pd.read_csv(pathlib.Path(manifest).with_suffix(".csv"))
+    cases = []
+    for c in m["cells"]:
+        src, tgt, w = edge_arrays(make_graph(c["family"], c["n"], c["seed"]))
+        cases.append(
+            dict(
+                kind="score",
+                n=c["n"],
+                src=src.tolist(),
+                tgt=tgt.tolist(),
+                w=w.tolist(),
+                gammas=c["gammas"],
+                betas=c["betas"],
+            )
+        )
+    ref = cudaq_reference(cases, upstream)
+    hw["P_cudaq"] = [float(ref[f"{i}_r"][0]) for i in range(len(cases))]
+    hw["ratio_cudaq"] = [float(ref[f"{i}_r"][1]) for i in range(len(cases))]
+    hw["P_err"] = np.sqrt(hw.success_probability * (1 - hw.success_probability) / hw.shots)
+    hw["P_hw/P_cudaq"] = hw.success_probability / hw.P_cudaq
+    hw["z_P"] = (hw.success_probability - hw.P_cudaq) / np.sqrt(
+        hw.P_cudaq * (1 - hw.P_cudaq) / hw.shots
+    )
+    hw["z_ratio"] = (hw.mean_ratio - hw.ratio_cudaq) / hw.mean_ratio_err
+    hw["qiskit_vs_cudaq"] = (hw.success_probability_exact - hw.P_cudaq).abs() / hw.P_cudaq
+    out = pathlib.Path(manifest).with_name(pathlib.Path(manifest).stem + "_vs_cudaq.csv")
+    hw.to_csv(out, index=False)
+    cols = ["family", "n", "p", "schedule", "router", "n_2q"]
+    cols += ["success_probability", "P_err", "P_cudaq", "z_P", "P_hw/P_cudaq"]
+    cols += ["mean_ratio", "ratio_cudaq", "z_ratio"]
+    print(hw[cols].to_string(index=False, float_format="%.4f"))
+    print(
+        f"\nz over {len(hw)} cells: P(x*) mean {hw.z_P.mean():+.2f} sd {hw.z_P.std():.2f}, "
+        f"ratio mean {hw.z_ratio.mean():+.2f} sd {hw.z_ratio.std():.2f}"
+    )
+    print(f"Qiskit exact vs CUDA-Q: max rel diff {hw.qiskit_vs_cudaq.max():.1e}\nwrote {out}")
+    return 0
+
+
 def summary(rows):
     import pandas as pd
 
@@ -256,11 +312,14 @@ def main():
     ap.add_argument("--state", type=int, default=30, help="random n = 11..20 state vectors")
     ap.add_argument("--sweep", type=int, default=30, help="upstream sweep rows to rerun")
     ap.add_argument("--out", default=str(ROOT / "results" / "compare_cudaq.json"))
+    ap.add_argument("--hardware", help="compare a hardware.py manifest instead")
     ap.add_argument("--dump", nargs=2, help=argparse.SUPPRESS)
     a = ap.parse_args()
     if a.dump:
         return dump(*a.dump)
     upstream = pathlib.Path(a.cudaq).resolve()
+    if a.hardware:
+        return compare_hardware(a.hardware, upstream)
     rng = np.random.default_rng(a.seed)
     cases = draw_cases(rng, "unitary", a.unitary, 4, 10, 8)
     cases += draw_cases(rng, "state", a.state, 11, 20, 60)
