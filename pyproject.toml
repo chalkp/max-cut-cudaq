@@ -1,7 +1,7 @@
 [project]
 name = "maxcut-qiskit"
 version = "0.1.0"
-description = "Qiskit port of max-cut-cudaq: LR-QAOA circuits on Qiskit Aer, for IBM hardware"
+description = "Qiskit port of max-cut-cudaq for UTokyo's IBM Quantum System One (ibm_kawasaki)"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [

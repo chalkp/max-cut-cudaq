@@ -1,1 +1,1 @@
-"""LR-QAOA for MaxCut on IBM Quantum hardware, scored exactly with Qiskit Aer."""
+"""LR-QAOA for MaxCut on UTokyo's IBM Quantum System One, scored exactly with Qiskit Aer."""

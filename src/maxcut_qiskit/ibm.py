@@ -1,5 +1,10 @@
 """IBM Quantum side: device circuits, transpiling, runs.
 
+The target is ibm_kawasaki, the IBM Quantum System One the University of Tokyo
+runs for the QII consortium. It was a 127-qubit Eagle r3 (ECR) and is due a
+156-qubit Heron (CZ, fractional rzz), so nothing here assumes either: gates,
+couplings and errors all come from the device's Target.
+
 Clbit v always holds vertex v, whatever the routing did, so int(bitstring, 2)
 indexes Problem.cuts() directly.
 """
@@ -12,27 +17,42 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.transpiler import generate_preset_pass_manager
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 
+DEVICE = "ibm_kawasaki"
 TWO_Q = ("rzz", "cz", "ecr", "cx")
+DENSITY_MAX_N = 14  # noisy local runs: density matrix up to here (4 GB at fp64)
 
 
-def backend(name, fractional=True):
+def account(instance=None):
+    from qiskit_ibm_runtime import QiskitRuntimeService
+
+    try:
+        return QiskitRuntimeService(instance=instance)
+    except Exception as e:  # no saved account, wrong instance, offline
+        raise SystemExit(f"no IBM Quantum account ({e}); save one first, see README") from e
+
+
+def backend(name=DEVICE, fractional=True, instance=None):
     """backend() - a device, or fake_<device> for Qiskit's shipped snapshot of it
-    @name: 'ibm_fez', 'fake_fez', ...
+    @name: 'ibm_kawasaki', 'fake_kawasaki', ...
     @fractional: ask for fractional gates (Heron only)
+    @instance: account instance to go through, the saved default if None
     """
     if name.startswith("fake_"):
         from qiskit_ibm_runtime import fake_provider
 
         return getattr(fake_provider, "Fake" + name[5:].title().replace("_", ""))()
-    from qiskit_ibm_runtime import QiskitRuntimeService
-
-    service = QiskitRuntimeService()
+    service = account(instance)
     if fractional:
         try:
             return service.backend(name, use_fractional_gates=True)
-        except Exception:  # not every device has them
+        except Exception:  # Eagle has none
             pass
     return service.backend(name)
+
+
+def processor(bk):
+    pt = getattr(bk, "processor_type", None) or {}
+    return f"{pt.get('family', '?')} r{pt.get('revision', '?')}" if pt else "?"
 
 
 def _edges(P):
@@ -162,11 +182,12 @@ def transpile(P, gammas, betas, target, line=None, router="best", seed=0):
     @betas: mixer angles, one per layer
     @target: the device's Target
     @line: physical path for the swap network, best_line() if None
-    @router: 'swap', 'sabre' or 'best' (both, fewer two-qubit gates wins)
+    @router: 'swap', 'sabre' or 'best' (both, higher fidelity() wins)
     @seed: transpiler seed
 
     The swap layout keeps the level 1 init stage, since level 3 would elide
-    the network's swaps and route everything again.
+    the network's swaps and route everything again. On Eagle's uneven
+    couplers fewer gates is not always fewer errors, hence fidelity().
 
     Return: (ISA circuit, router used).
     """
@@ -182,7 +203,7 @@ def transpile(P, gammas, betas, target, line=None, router="best", seed=0):
         pm = generate_preset_pass_manager(optimization_level=3, target=target, seed_transpiler=seed)
         out["sabre"] = pm.run(logical(P, gammas, betas))
     out = {k: _fold_phase_gates(qc) for k, qc in out.items()}
-    name = min(out, key=lambda k: (count_2q(out[k]), out[k].depth()))
+    name = max(out, key=lambda k: (fidelity(out[k], target), -count_2q(out[k])))
     return out[name], name
 
 
@@ -198,6 +219,25 @@ def _fold_phase_gates(qc):
         else:
             out.append(inst)
     return out
+
+
+def fidelity(isa, target):
+    """fidelity() - odds that @isa runs without a single gate or readout error
+    @isa: an ISA circuit
+    @target: the device's Target
+
+    Idle decoherence is left out. On the Fez and Kawasaki models the share of
+    P(x*) a circuit keeps comes out a little above it, about F^0.7.
+    """
+    log_f = 0.0
+    for inst in isa.data:
+        name = inst.operation.name
+        if name not in target.operation_names:
+            continue
+        props = target[name].get(tuple(isa.find_bit(q).index for q in inst.qubits))
+        if props is not None and props.error is not None:
+            log_f += math.log(max(1e-12, 1.0 - props.error))
+    return math.exp(log_f)
 
 
 def score(P, bits):
@@ -229,12 +269,44 @@ def qpu_seconds(isa, target, shots, rep_delay=250e-6):
     return shots * (t + rep_delay)
 
 
+def width(isa):
+    # SABRE may route through spare qubits, so this can exceed the qubits read
+    skip = ("barrier", "delay")
+    return len(
+        {isa.find_bit(q).index for i in isa.data if i.operation.name not in skip for q in i.qubits}
+    )
+
+
+def sim_method(n, noiseless=False):
+    # Shot trajectories above DENSITY_MAX_N: 4000 noisy shots on 20 qubits take
+    # about 3 min on an RTX 3080. Only the readout calibrations go past 24, and
+    # they are product states.
+    if n > 24:
+        return "matrix_product_state"
+    return "density_matrix" if not noiseless and n <= DENSITY_MAX_N else "statevector"
+
+
+def simulator(bk, n, noiseless=False):
+    """simulator() - local Aer sampler for circuits of @bk
+    @bk: fake_* snapshot, or a real device for its live calibration
+    @n: the circuit's width()
+    @noiseless: ideal gates and readout
+    """
+    from qiskit_aer import AerSimulator
+    from qiskit_aer.primitives import SamplerV2
+
+    method = sim_method(n, noiseless)
+    kw = dict(method=method)
+    if method != "matrix_product_state" and "GPU" in AerSimulator().available_devices():
+        kw.update(device="GPU", **(dict(cuStateVec_enable=True) if method == "statevector" else {}))
+    sim = AerSimulator(**kw) if noiseless else AerSimulator.from_backend(bk, **kw)
+    return SamplerV2.from_backend(sim)
+
+
 def sampler(mode, dd=True, twirl=False):
     from qiskit_ibm_runtime import SamplerV2
 
     s = SamplerV2(mode=mode)
-    if getattr(mode, "name", "").startswith("fake"):
-        return s  # local testing mode takes no device options
     s.options.dynamical_decoupling.enable = dd
     if dd:
         s.options.dynamical_decoupling.sequence_type = "XpXm"

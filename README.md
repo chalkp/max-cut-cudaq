@@ -1,9 +1,10 @@
 # max-cut-qiskit
 
-Qiskit fork of [max-cut-cudaq](https://github.com/chalkp/max-cut-cudaq): the same
-graphs and LR-QAOA circuits, with the CUDA-Q kernels swapped for Qiskit Aer so
-they can go to IBM hardware. The simulator-only studies (the full p-sweep,
-fits, figures) stay upstream.
+Qiskit fork of [max-cut-cudaq](https://github.com/chalkp/max-cut-cudaq) for
+running LR-QAOA on UTokyo's IBM Quantum System One (`ibm_kawasaki`). Device
+counts are scored against exact Qiskit Aer runs of the same angles, and both are
+cross-checked against upstream's CUDA-Q results. The simulator-only studies
+(the full p-sweep, fits, figures) stay upstream.
 
 ```
 src/maxcut_qiskit/
@@ -12,9 +13,9 @@ src/maxcut_qiskit/
   aer.py        Aer circuit and simulator (cuStateVec), on-device readout
   cpu.py        cut values of all 2^n bitstrings, numpy state vector for small n
   schedules.py  gap-adapted and cubic schedules, COBYLA baseline angles
-  ibm.py        device circuits: swap network or SABRE, ISA transpile, SamplerV2
+  ibm.py        device circuits, routing, local noise models
 experiments/
-  hardware.py       sweep / pilot / depth-matched on an IBM device
+  hardware.py       sweep / pilot / depth-matched on ibm_kawasaki or its model
   compare_cudaq.py  random circuits, states and sweep rows vs upstream
 ```
 
@@ -28,40 +29,47 @@ against packages published before 2026-10-15 (`exclude-newer`).
 pixi install            # or: uv sync
 ```
 
-## Run
-
-| task | script | output |
-|---|---|---|
-| `hardware` | `hardware.py` | sweep / pilot / depth-matched on an IBM device -> `hardware/` |
-| `compare` | `compare_cudaq.py` | random circuits, states and sweep rows vs upstream -> `compare_cudaq.json` |
-
-`pixi run <task>`, or `python experiments/<script>.py`.
-
 `compare` runs the CUDA-Q side in upstream's environment: the superproject when
 this repo is its `max-cut-qiskit` submodule, `../max-cut-cudaq` otherwise
 (`--cudaq PATH` to override).
 
-## Hardware
+## The device
 
-Save an IBM Quantum account once, in your own terminal:
+`ibm_kawasaki` is the System One in Kawasaki that the University of Tokyo runs
+for the QII consortium: a 127-qubit Eagle r3 (ECR) since 2023, announced for a
+156-qubit Heron (CZ, fractional `rzz`) in 2025. Gates, couplings and errors are
+read off the device, so either works. `fake_kawasaki` is Qiskit's Eagle r3
+snapshot. Save the QII account once, in your own terminal:
 
 ```
 pixi run python -c "from qiskit_ibm_runtime import QiskitRuntimeService as S; \
-  S.save_account(channel='ibm_quantum_platform', token='<API key>', instance='<CRN>', set_as_default=True)"
+  S.save_account(channel='ibm_quantum_platform', token='<API key>', instance='<QII instance>', set_as_default=True)"
+pixi run python -c "from qiskit_ibm_runtime import QiskitRuntimeService as S; print([b.name for b in S().backends()])"
 ```
 
+## Run
+
 ```
-pixi run hardware sweep --backend fake_fez --n 8 10 --p 1 2 3 5   # local noise model
-pixi run hardware sweep --backend fake_fez --noiseless             # same circuits, ideal
-pixi run hardware sweep --backend ibm_fez                          # estimate only
-pixi run hardware sweep --backend ibm_fez --submit                 # job ids -> results/hardware
-pixi run hardware collect results/hardware/sweep_ibm_fez.json
-pixi run compare --hardware results/hardware/sweep_fake_fez_ideal.json   # vs CUDA-Q
+pixi run hardware sweep                                     # fake_kawasaki, local
+pixi run hardware sweep --noiseless                         # same circuits, ideal
+pixi run compare --hardware results/hardware/sweep_fake_kawasaki_ideal.json
+pixi run hardware sweep --backend ibm_kawasaki --simulate   # live calibration, local
+pixi run hardware sweep --backend ibm_kawasaki              # estimate only
+pixi run hardware sweep --backend ibm_kawasaki --submit     # job ids -> results/hardware
+pixi run hardware collect results/hardware/sweep_ibm_kawasaki.json
+pixi run compare                                            # circuits vs upstream
 ```
 
-Dense graphs go through a swap network on a line of good qubits, sparse ones
-through SABRE, whichever needs fewer two-qubit gates; fractional `rzz` is used
-where the device has it. Dynamical decoupling on, twirling off (`--twirl`).
+- Each circuit is built twice, as a swap network on the best line of qubits and
+  through SABRE; the one more likely to run error-free (`fidelity`, product of
+  1 - error over its gates and readouts) is kept.
+- Circuits under `--min-fid` (0.01) are dropped. The grids ask the questions and
+  the device decides which it can answer, so a Heron keeps more than an Eagle.
+- Dynamical decoupling (XpXm) on, twirling off (`--twirl`), one Batch
+  (`--mode job` where batches are not allowed).
+- Local noisy runs use a density matrix up to 14 qubits and shot trajectories
+  above (2-4 min a circuit on 16-20 qubits). SABRE may route through spare
+  qubits, so a circuit can touch more qubits than it reads.
 
 ## Knobs
 
