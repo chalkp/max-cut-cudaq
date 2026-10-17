@@ -6,7 +6,8 @@
 
 Each cell (instance, angles) is one ISA circuit and one PUB. Cells whose odds of
 running error-free (ibm.fidelity) fall below --min-fid are dropped; at 4000
-shots they cannot be told from noise.
+shots they cannot be told from noise. Two readout calibration circuits ride
+along, so every row has P(x*) and the cut ratio raw and readout-corrected.
 
     hardware.py sweep --n 8 10 --p 1 2 3 5              # fake_kawasaki, local
     hardware.py sweep --noiseless                       # same circuits, ideal
@@ -90,7 +91,8 @@ STUDIES = {
 
 
 def build(a, bk):
-    """Cells, their ISA circuits and the exact references, in PUB order."""
+    """Cells, their ISA circuits and the exact references. PUBs are the cells
+    in order, then the all-0 and all-1 calibrations of every qubit read."""
     make, *_ = STUDIES[a.study]
     target, lines, cells, isas = bk.target, {}, [], []
     t0, dropped = time.time(), 0
@@ -111,6 +113,7 @@ def build(a, bk):
             n_2q=n2q,
             depth=isa.depth(),
             fidelity=fid,
+            measured=list(ibm.measured_qubits(isa)),
             qpu_s=ibm.qpu_seconds(isa, target, a.shots),
             success_probability_exact=ref["success_probability"],
             mean_ratio_exact=ref["mean_ratio"],
@@ -124,17 +127,27 @@ def build(a, bk):
             f"F={fid:.3f} P*exact={ref['success_probability']:.4f}",
             flush=True,
         )
+    cal = sorted({q for c in cells for q in c["measured"]})
+    isas += ibm.calibration(cal, bk.num_qubits) if cells else []
     print(
-        f"[build] {len(cells)} circuits in {time.time() - t0:.0f} s; {dropped} dropped", flush=True
+        f"[build] {len(cells)} circuits + 2 readout calibrations ({len(cal)} qubits) in "
+        f"{time.time() - t0:.0f} s; {dropped} dropped",
+        flush=True,
     )
-    return cells, isas
+    return cells, cal, isas
 
 
 def score_rows(manifest, pubs):
+    cells, k = manifest["cells"], len(manifest["cells"])
+    e01, e10 = ibm.flip_rates(pubs[k].data.meas, pubs[k + 1].data.meas)
+    at = {q: i for i, q in enumerate(manifest["calibration"])}
     rows = []
-    for c, pub in zip(manifest["cells"], pubs):
-        row = {key: v for key, v in c.items() if key not in ("gammas", "betas")}
-        row.update(ibm.score(problem(c["family"], c["n"], c["seed"]), pub.data.meas))
+    for c, pub in zip(cells, pubs):
+        i = [at[q] for q in c["measured"]]
+        row = {key: v for key, v in c.items() if key not in ("gammas", "betas", "measured")}
+        row.update(
+            ibm.score(problem(c["family"], c["n"], c["seed"]), pub.data.meas, (e01[i], e10[i]))
+        )
         row.update(backend=manifest["backend"], created=manifest["created"])
         rows.append(row)
     return rows
@@ -153,9 +166,10 @@ def summarize(rows):
 
     d = pd.DataFrame(rows)
     d["kept"] = d.success_probability / d.success_probability_exact
-    cols = ["success_probability", "success_probability_exact", "fidelity", "kept"]
+    d["kept_mit"] = d.success_probability_mitigated / d.success_probability_exact
+    cols = ["success_probability", "success_probability_mitigated", "success_probability_exact"]
     keys = ["family", "n", "schedule"] if d.schedule.nunique() > 1 else ["family", "n", "p"]
-    print(d.groupby(keys)[cols].mean().round(4).to_string())
+    print(d.groupby(keys)[cols + ["fidelity", "kept", "kept_mit"]].mean().round(4).to_string())
 
 
 def device_line(bk):
@@ -174,7 +188,7 @@ def run(a):
         raise SystemExit("--simulate is for a real device; fake_* already runs locally")
     bk = ibm.backend(a.backend, fractional=not a.no_fractional, instance=a.instance)
     print(f"[{a.study}] {device_line(bk)}", flush=True)
-    cells, isas = build(a, bk)
+    cells, cal, isas = build(a, bk)
     if not cells:
         raise SystemExit("no circuits left; lower --min-fid or pick smaller n, p")
     qpu = sum(ibm.qpu_seconds(isa, bk.target, a.shots) for isa in isas)
@@ -195,6 +209,7 @@ def run(a):
         min_fid=a.min_fid,
         created=datetime.datetime.now().isoformat(timespec="seconds"),
         cells=cells,
+        calibration=cal,
         jobs=[],
     )
     if a.dry_run or not (local or a.submit):

@@ -13,7 +13,7 @@ src/maxcut_qiskit/
   aer.py        Aer circuit and simulator (cuStateVec), on-device readout
   cpu.py        cut values of all 2^n bitstrings, numpy state vector for small n
   schedules.py  gap-adapted and cubic schedules, COBYLA baseline angles
-  ibm.py        device circuits, routing, local noise models
+  ibm.py        device circuits, routing, readout correction, local noise models
 experiments/
   hardware.py       sweep / pilot / depth-matched on ibm_kawasaki or its model
   compare_cudaq.py  random circuits, states and sweep rows vs upstream
@@ -67,9 +67,23 @@ pixi run compare                                            # circuits vs upstre
   the device decides which it can answer, so a Heron keeps more than an Eagle.
 - Dynamical decoupling (XpXm) on, twirling off (`--twirl`), one Batch
   (`--mode job` where batches are not allowed).
+- Two readout calibration circuits ride along; `*_mitigated` columns are the
+  counts after the tensored inverse.
 - Local noisy runs use a density matrix up to 14 qubits and shot trajectories
   above (2-4 min a circuit on 16-20 qubits). SABRE may route through spare
   qubits, so a circuit can touch more qubits than it reads.
+
+On `fake_kawasaki` (ECR median error 9.0e-3, readout 1.6%), default grids,
+4000 shots:
+
+| study | circuits kept | QPU estimate | noiseless vs CUDA-Q, z sd | noisy model |
+|---|---|---|---|---|
+| sweep | 156 of 350 | 3.5 min | 0.95 | above random (3 sigma) in 138; rings peak at p = 6-8, exact still rising at the deepest p kept |
+| pilot | 180 of 400 | 4.3 min | 1.10 | gap-adapted beats linear in 36 of 45 groups (exact: 40) |
+| depth-matched | 72 of 168 | 1.7 min | 1.09 | 36 pairs left, mostly p = 3, 5; LR wins 17 (exact: 14) |
+
+QPU estimates leave out job overheads. A noisy circuit keeps about F^0.7 of
+P(x*); the readout correction lifts that from 0.31 to 0.33 on average.
 
 ## Knobs
 

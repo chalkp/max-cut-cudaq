@@ -1,4 +1,4 @@
-"""IBM Quantum side: device circuits, transpiling, runs.
+"""IBM Quantum side: device circuits, transpiling, readout correction, runs.
 
 The target is ibm_kawasaki, the IBM Quantum System One the University of Tokyo
 runs for the QII consortium. It was a 127-qubit Eagle r3 (ECR) and is due a
@@ -63,8 +63,8 @@ def _edges(P):
     return w
 
 
-def _empty(n):
-    return QuantumCircuit(QuantumRegister(n, "q"), ClassicalRegister(n, "meas"))
+def _empty(n, m=None):
+    return QuantumCircuit(QuantumRegister(n, "q"), ClassicalRegister(n if m is None else m, "meas"))
 
 
 def logical(P, gammas, betas):
@@ -240,10 +240,55 @@ def fidelity(isa, target):
     return math.exp(log_f)
 
 
-def score(P, bits):
+def measured_qubits(isa):
+    """Physical qubit read into each clbit."""
+    m = {
+        isa.find_bit(i.clbits[0]).index: isa.find_bit(i.qubits[0]).index
+        for i in isa.data
+        if i.operation.name == "measure"
+    }
+    return tuple(m[c] for c in range(isa.num_clbits))
+
+
+def calibration(qubits, num_qubits):
+    """The all-0 and all-1 readout circuits; clbit k reads qubits[k]."""
+    out = []
+    for flip in (False, True):
+        qc = _empty(num_qubits, len(qubits))
+        if flip:
+            qc.x(list(qubits))
+        qc.measure(list(qubits), range(len(qubits)))
+        out.append(qc)
+    return out
+
+
+def flip_rates(bits0, bits1):
+    """Per-clbit P(read 1 | 0) and P(read 0 | 1) from the calibration shots."""
+    return bits0.to_bool_array("little").mean(0), 1.0 - bits1.to_bool_array("little").mean(0)
+
+
+def unfold(dist, e01, e10):
+    """unfold() - undo independent readout flips on a 2^n distribution
+    @dist: probabilities indexed by int(bitstring, 2)
+    @e01: per-bit P(read 1 | 0)
+    @e10: per-bit P(read 0 | 1)
+
+    Tensored inverse; bit j is axis n-1-j once reshaped. The result still sums
+    to 1 but may dip below 0 here and there.
+    """
+    n = len(e01)
+    q = dist.reshape((2,) * n)
+    for j in range(n):
+        a = np.array([[1.0 - e01[j], e10[j]], [e01[j], 1.0 - e10[j]]])
+        q = np.moveaxis(np.tensordot(np.linalg.inv(a), q, axes=([1], [n - 1 - j])), 0, n - 1 - j)
+    return q.reshape(-1)
+
+
+def score(P, bits, rates=None):
     """score() - P(x*), mean cut ratio and expected cut from sampled bits
     @P: the Problem
     @bits: a BitArray (pub_result.data.meas)
+    @rates: (e01, e10) from flip_rates(), adds the readout-corrected values
     """
     counts = bits.get_int_counts()
     idx = np.fromiter(counts.keys(), dtype=np.int64, count=len(counts))
@@ -252,13 +297,21 @@ def score(P, bits):
     cuts, opt = P.cuts(), P.optimal_indices()
     ec = float(c @ cuts[idx]) / shots
     sd = math.sqrt(max(0.0, float(c @ cuts[idx] ** 2) / shots - ec**2))
-    return dict(
+    out = dict(
         success_probability=float(c[np.isin(idx, opt)].sum()) / shots,
         mean_ratio=ec / P.best,
         mean_ratio_err=sd / math.sqrt(shots) / abs(P.best),
         expected_cut=ec,
         shots=int(shots),
     )
+    if rates is not None:
+        q = unfold(np.bincount(idx, weights=c, minlength=2**P.n) / shots, *rates)
+        out.update(
+            success_probability_mitigated=float(q[opt].sum()),
+            mean_ratio_mitigated=float(q @ cuts) / P.best,
+            readout_error_mean=float(np.mean(rates[0] + rates[1]) / 2),
+        )
+    return out
 
 
 def qpu_seconds(isa, target, shots, rep_delay=250e-6):

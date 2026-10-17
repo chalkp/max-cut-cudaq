@@ -16,7 +16,7 @@ with --dump and reads the arrays back. Upstream is the superproject when this
 repo is checked out as its submodule, else ../max-cut-cudaq.
 
     compare_cudaq.py
-    compare_cudaq.py --hardware results/hardware/sweep_fake_fez_ideal.json
+    compare_cudaq.py --hardware results/hardware/sweep_fake_kawasaki_ideal.json
 """
 
 import argparse
@@ -266,6 +266,7 @@ def compare_hardware(manifest, upstream):
     hw["ratio_cudaq"] = [float(ref[f"{i}_r"][1]) for i in range(len(cases))]
     hw["P_err"] = np.sqrt(hw.success_probability * (1 - hw.success_probability) / hw.shots)
     hw["P_hw/P_cudaq"] = hw.success_probability / hw.P_cudaq
+    hw["P_mit/P_cudaq"] = hw.success_probability_mitigated / hw.P_cudaq
     hw["z_P"] = (hw.success_probability - hw.P_cudaq) / np.sqrt(
         hw.P_cudaq * (1 - hw.P_cudaq) / hw.shots
     )
@@ -273,8 +274,8 @@ def compare_hardware(manifest, upstream):
     hw["qiskit_vs_cudaq"] = (hw.success_probability_exact - hw.P_cudaq).abs() / hw.P_cudaq
     out = pathlib.Path(manifest).with_name(pathlib.Path(manifest).stem + "_vs_cudaq.csv")
     hw.to_csv(out, index=False)
-    cols = ["family", "n", "p", "schedule", "router", "n_2q"]
-    cols += ["success_probability", "P_err", "P_cudaq", "z_P", "P_hw/P_cudaq"]
+    cols = ["family", "n", "p", "schedule", "router", "n_2q", "fidelity"]
+    cols += ["success_probability", "P_err", "P_cudaq", "z_P", "P_hw/P_cudaq", "P_mit/P_cudaq"]
     cols += ["mean_ratio", "ratio_cudaq", "z_ratio"]
     print(hw[cols].to_string(index=False, float_format="%.4f"))
     print(
