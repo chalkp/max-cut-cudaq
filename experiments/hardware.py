@@ -232,7 +232,7 @@ def run(a):
         print(f"[submit] {len(chunks)} jobs; collect with: python {sys.argv[0]} collect {path}")
         return 0
     # XXX: one noisy Aer run holding several ISA circuits can return zeros for
-    # all but the first (qiskit-aer 0.17, CPU). Real devices are fine, and the
+    # some of them (qiskit-aer 0.17-0.18, CPU). Real devices are fine, and the
     # method depends on the width anyway, so local PUBs go one at a time.
     sims, pubs, t0 = {}, [], time.time()
     for isa in isas:

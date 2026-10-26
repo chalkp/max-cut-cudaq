@@ -21,9 +21,9 @@ experiments/
 
 ## Install
 
-Linux x86-64. An NVIDIA GPU is used when there is one (`qiskit-aer-gpu-cu11`,
-CUDA 11 runtime); without one Aer runs on the CPU. Both lock files resolve
-against packages published before 2026-10-15 (`exclude-newer`).
+Linux x86-64. An NVIDIA GPU is used when there is one (`qiskit-aer-gpu`,
+CUDA 12 runtime); without one Aer runs on the CPU. Both lock files resolve
+against packages published before 2026-10-26 (`exclude-newer`).
 
 ```
 pixi install            # or: uv sync
@@ -78,12 +78,12 @@ On `fake_kawasaki` (ECR median error 9.0e-3, readout 1.6%), default grids,
 
 | study | circuits kept | QPU estimate | noiseless vs CUDA-Q, z sd | noisy model |
 |---|---|---|---|---|
-| sweep | 156 of 350 | 3.5 min | 0.95 | above random (3 sigma) in 138; rings peak at p = 6-8, exact still rising at the deepest p kept |
-| pilot | 180 of 400 | 4.3 min | 1.10 | gap-adapted beats linear in 36 of 45 groups (exact: 40) |
-| depth-matched | 72 of 168 | 1.7 min | 1.09 | 36 pairs left, mostly p = 3, 5; LR wins 17 (exact: 14) |
+| sweep | 156 of 350 | 3.5 min | 1.00 | above random (3 sigma) in 140; rings peak at p = 4-10, exact still rising at the deepest p kept |
+| pilot | 180 of 400 | 4.3 min | 1.01 | gap-adapted beats linear in 36 of 45 groups (exact: 40) |
+| depth-matched | 72 of 168 | 1.7 min | 1.15 | 36 pairs left, mostly p = 3, 5; LR wins 17 (exact: 14) |
 
 QPU estimates leave out job overheads. A noisy circuit keeps about F^0.7 of
-P(x*); the readout correction lifts that from 0.31 to 0.33 on average.
+P(x*); the readout correction lifts that from 0.32 to 0.34 on average.
 
 ## Knobs
 
