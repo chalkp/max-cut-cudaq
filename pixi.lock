@@ -34,15 +34,17 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/readline-8.3-hd6e31c0_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h1df4ec4_4.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_7.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.19-hbd8a1cb_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/07/73/3ee8e5b4cb891401e603ffd3a59b35c6afe785fd2de123afe7c7029603dc/nvidia_curand-10.4.4.72-py3-none-manylinux_2_27_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/1d/6b/eef7a9e32872b8f41e145bf10cddc9af26e153c338852811fe9a9baddf9e/nvidia_nvjitlink-13.4.92-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/38/bb/d215ee7c73b61497b28a5503f9f53523f294fcc936762b7caf90e0c1c2b5/pyparsing-3.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/43/a3/c799c62e19c337e6d3770b08e475887fb30ce8477d3c09efca6b2f0228a6/numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/56/9c/1342ebb460ce2afd014ec5a002adc99108e3c53a6b70f399cf64dd1f267d/nvidia_cuda_nvrtc-13.4.92-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5e/63/3466befda731425027faaa16f29d3ff44c61a8e7b94d82385d0f90e724c1/cutensornet_cu13-2.12.2-py3-none-manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/67/f5/ca0ba263602fc3e7afb7052ae1df68ca48110867752740d355854f8b28d0/cupy_cuda13x-13.6.0-cp312-cp312-manylinux2014_x86_64.whl
@@ -55,6 +57,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/80/cb/409df72613bf1c6cd9b545a257ab5489ecfd98c88cdf7ee9d7fc434e94a1/nvidia_cusparse-12.8.6.72-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/93/d0/cfe2e3403ebaecf01201d50f7efe2d22dbdc6687120dd88c0e16f79e0332/custatevec_cu13-1.13.1-py3-none-manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/94/21/1e5995a1c920cce14e4bffae20c665ec10e7ed03ab25e006cd741092b718/tzdata-2026.5-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/98/8a/3431271f6344874b8f1ac03f16b3d679c91493f8da63f716160403e6d0a0/nvidia_cuda_runtime-13.4.92-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/9f/0a/79fff71a08bc0cc427f0dfbd4cca62b60f7f277aae81b89b79e9b04d526d/astpretty-3.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl
@@ -62,13 +65,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/90/2b3fd67ee273163faeda6d514be70b5596eaa0fd77b60ffc294ad0b34f5f/matplotlib-3.11.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c1/e0/ec9e4cc868c514deb02233aa1047a6aeb9350d3ee012862f58eec10ef834/fonttools-4.67.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/c4/51/29046e48f693c54e5b7412216d447a1d8362c9653148d98c02cdf65fa733/certifi-2026.10.19-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/cb/67/0c0f18e38d7f2d2af8c24b3315bc4046e73bbdd4a5540405506671ad0c0d/pandas-3.0.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c5/a6/dc89cdd95e12093bc813e9b814a09f1a056be3e1304edaef9bf9dbee108a/pandas-3.1.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/df/64/ff35eb9e54894cf471ff4716abd3c81eb0a0626869217ce3e6ba4ccf17d7/scipy-1.18.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e6/99/fdf65cc539e266ab93546c261bdf98411fe165c6e4e13f9dbf597097192b/pillow-13.0.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/eb/1b/adc70acf3fde509b1f0ca29d1c0e8d9b00aaecd871f8cf877257c8b68d9c/nvidia_cublas-13.8.1.7-py3-none-manylinux_2_27_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fc/f4/dadfec469313c7f428efa7e84b4aba9732f813c13ea7131a24b7b008ef57/kiwisolver-1.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/fd/67/8ccb65ea1233301bbfdff67f2120df370bc16b716b8b3d0ec4a61a1ec50e/cudensitymat_cu13-0.5.2-py3-none-manylinux2014_x86_64.whl
 packages:
@@ -382,24 +383,24 @@ packages:
     - zstd >=1.5.7,<1.6.0a0
   size: 601301
   timestamp: 1786599621503
-- conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.19-hbd8a1cb_0.conda
-  sha256: 9404ee878c6bd5b260655ab651366db43fac6be8d465fcc0acd0f7a50be91acb
-  md5: a1d1bf676059d2863f000d5e2777743f
+- conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.10.23-hbd8a1cb_0.conda
+  sha256: 95619b9c1184be7175392eeb0ee7eeb5ccf25d280951f4225f2d62e725790be3
+  md5: 3fd02989038a1e1cee627c14c2d73f29
   depends:
   - __unix
   license: ISC
   purls: []
   run_exports: {}
-  size: 131396
-  timestamp: 1792483552251
-- conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
-  sha256: b928c30ddcb0e3f544c6eade8352737e6e610e263276b90232db6a578ef899d8
-  md5: fcb489df604d100968b737f2cb6076c6
+  size: 130057
+  timestamp: 1792772446739
+- conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
+  sha256: 2b7ca858879f183ce2dcc65b300f48a0133d5430550f35b23d80d405a0788dbf
+  md5: abccc3810d2b97e570dee487f2b46e38
   license: LicenseRef-Public-Domain
   purls: []
   run_exports: {}
-  size: 118849
-  timestamp: 1784250406640
+  size: 119208
+  timestamp: 1792758382821
 - pypi: ./
   name: maxcut-cudaq
   requires_dist:
@@ -421,6 +422,11 @@ packages:
   version: 13.4.92
   sha256: e0391f24ed94ec879b84e3da4d4ec320c879aff681f2c7a638462f7199284323
   requires_python: '>=3'
+- pypi: https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl
+  name: certifi
+  version: 2026.10.23
+  sha256: e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1
+  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/38/bb/d215ee7c73b61497b28a5503f9f53523f294fcc936762b7caf90e0c1c2b5/pyparsing-3.3.3-py3-none-any.whl
   name: pyparsing
   version: 3.3.3
@@ -451,6 +457,14 @@ packages:
   - hypothesis>=6.141.1 ; extra == 'all'
   - coverage>=7.10.0 ; extra == 'all'
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl
+  name: python-dateutil
+  version: 3.0.0
+  sha256: 3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd
+  requires_dist:
+  - six>=1.6
+  - tzdata
+  requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*'
 - pypi: https://files.pythonhosted.org/packages/5e/63/3466befda731425027faaa16f29d3ff44c61a8e7b94d82385d0f90e724c1/cutensornet_cu13-2.12.2-py3-none-manylinux2014_x86_64.whl
   name: cutensornet-cu13
   version: 2.12.2
@@ -611,6 +625,11 @@ packages:
   name: custatevec-cu13
   version: 1.13.1
   sha256: c3ab6cbd6f028f96570c753acf0766a74728c9ba2341bd9a2067b8b82bb84845
+- pypi: https://files.pythonhosted.org/packages/94/21/1e5995a1c920cce14e4bffae20c665ec10e7ed03ab25e006cd741092b718/tzdata-2026.5-py2.py3-none-any.whl
+  name: tzdata
+  version: '2026.5'
+  sha256: b683bd1b6659ddcd810ff02ad09ba821d4bf1065072805063eb35c49617905ac
+  requires_python: '>=2'
 - pypi: https://files.pythonhosted.org/packages/98/8a/3431271f6344874b8f1ac03f16b3d679c91493f8da63f716160403e6d0a0/nvidia_cuda_runtime-13.4.92-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: nvidia-cuda-runtime
   version: 13.4.92
@@ -696,99 +715,92 @@ packages:
   - skia-pathops>=0.5.0 ; extra == 'all'
   - uharfbuzz>=0.45.0 ; extra == 'all'
   requires_python: '>=3.11'
-- pypi: https://files.pythonhosted.org/packages/c4/51/29046e48f693c54e5b7412216d447a1d8362c9653148d98c02cdf65fa733/certifi-2026.10.19-py3-none-any.whl
-  name: certifi
-  version: 2026.10.19
-  sha256: 42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b
-  requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/cb/67/0c0f18e38d7f2d2af8c24b3315bc4046e73bbdd4a5540405506671ad0c0d/pandas-3.0.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+- pypi: https://files.pythonhosted.org/packages/c5/a6/dc89cdd95e12093bc813e9b814a09f1a056be3e1304edaef9bf9dbee108a/pandas-3.1.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
   name: pandas
-  version: 3.0.6
-  sha256: 0704044b676496b8350e023b09f174a26772456c974a2b11c36bebb558c9490d
+  version: 3.1.0
+  sha256: 9433b5dc2f26ef9d9b56daaf4d41d078bf4372c5d88c42ed5b397a6eea80de16
   requires_dist:
-  - numpy>=1.26.0 ; python_full_version < '3.14'
+  - numpy>=2.0.2 ; python_full_version < '3.14'
   - numpy>=2.3.3 ; python_full_version >= '3.14'
-  - python-dateutil>=2.8.2
+  - python-dateutil>=2.9.0
   - tzdata ; sys_platform == 'win32'
   - tzdata ; sys_platform == 'emscripten'
-  - hypothesis>=6.116.0 ; extra == 'test'
-  - pytest>=8.3.4,<9.1 ; extra == 'test'
+  - pytest>=8.3.4 ; extra == 'test'
   - pytest-xdist>=3.6.1 ; extra == 'test'
-  - pyarrow>=13.0.0 ; extra == 'pyarrow'
-  - bottleneck>=1.4.2 ; extra == 'performance'
-  - numba>=0.60.0 ; extra == 'performance'
-  - numexpr>=2.10.2 ; extra == 'performance'
-  - scipy>=1.14.1 ; extra == 'computation'
-  - xarray>=2024.10.0 ; extra == 'computation'
-  - fsspec>=2024.10.0 ; extra == 'fss'
-  - s3fs>=2024.10.0 ; extra == 'aws'
-  - gcsfs>=2024.10.0 ; extra == 'gcp'
+  - pyarrow>=16.0.0 ; extra == 'pyarrow'
+  - bottleneck>=1.5.0 ; extra == 'performance'
+  - numba>=0.61.2 ; extra == 'performance'
+  - numexpr>=2.11.0,!=2.14.1 ; extra == 'performance'
+  - scipy>=1.16.1 ; extra == 'computation'
+  - xarray>=2025.7.1 ; extra == 'computation'
+  - fsspec>=2025.7.0 ; extra == 'fss'
+  - s3fs>=2025.7.0 ; extra == 'aws'
+  - gcsfs>=2025.7.0 ; extra == 'gcp'
   - odfpy>=1.4.1 ; extra == 'excel'
   - openpyxl>=3.1.5 ; extra == 'excel'
-  - python-calamine>=0.3.0 ; extra == 'excel'
+  - python-calamine>=0.4.0 ; extra == 'excel'
   - pyxlsb>=1.0.10 ; extra == 'excel'
-  - xlrd>=2.0.1 ; extra == 'excel'
-  - xlsxwriter>=3.2.0 ; extra == 'excel'
+  - xlrd>=2.0.2 ; extra == 'excel'
+  - xlsxwriter>=3.2.5 ; extra == 'excel'
   - pyarrow>=13.0.0 ; extra == 'parquet'
   - pyarrow>=13.0.0 ; extra == 'feather'
-  - pyiceberg>=0.8.1 ; extra == 'iceberg'
-  - tables>=3.10.1 ; extra == 'hdf5'
-  - pyreadstat>=1.2.8 ; extra == 'spss'
-  - sqlalchemy>=2.0.36 ; extra == 'postgresql'
+  - pyiceberg>=0.9.1 ; extra == 'iceberg'
+  - tables>=3.10.2 ; extra == 'hdf5'
+  - pyreadstat>=1.3.0 ; extra == 'spss'
+  - sqlalchemy>=2.0.42 ; extra == 'postgresql'
   - psycopg2>=2.9.10 ; extra == 'postgresql'
-  - adbc-driver-postgresql>=1.2.0 ; extra == 'postgresql'
-  - sqlalchemy>=2.0.36 ; extra == 'mysql'
+  - adbc-driver-postgresql>=1.7.0 ; extra == 'postgresql'
+  - sqlalchemy>=2.0.42 ; extra == 'mysql'
   - pymysql>=1.1.1 ; extra == 'mysql'
-  - sqlalchemy>=2.0.36 ; extra == 'sql-other'
-  - adbc-driver-postgresql>=1.2.0 ; extra == 'sql-other'
-  - adbc-driver-sqlite>=1.2.0 ; extra == 'sql-other'
-  - beautifulsoup4>=4.12.3 ; extra == 'html'
+  - sqlalchemy>=2.0.42 ; extra == 'sql-other'
+  - adbc-driver-postgresql>=1.7.0 ; extra == 'sql-other'
+  - adbc-driver-sqlite>=1.7.0 ; extra == 'sql-other'
+  - beautifulsoup4>=4.13.4 ; extra == 'html'
   - html5lib>=1.1 ; extra == 'html'
-  - lxml>=5.3.0 ; extra == 'html'
-  - lxml>=5.3.0 ; extra == 'xml'
-  - matplotlib>=3.9.3 ; extra == 'plot'
-  - jinja2>=3.1.5 ; extra == 'output-formatting'
+  - lxml>=6.0.0 ; extra == 'html'
+  - lxml>=6.0.0 ; extra == 'xml'
+  - matplotlib>=3.10.5 ; extra == 'plot'
+  - jinja2>=3.1.6 ; extra == 'output-formatting'
   - tabulate>=0.9.0 ; extra == 'output-formatting'
-  - pyqt5>=5.15.9 ; extra == 'clipboard'
-  - qtpy>=2.4.2 ; extra == 'clipboard'
+  - pyqt5>=5.15.11 ; extra == 'clipboard'
+  - qtpy>=2.4.3 ; extra == 'clipboard'
   - zstandard>=0.23.0 ; extra == 'compression'
   - pytz>=2020.1 ; extra == 'timezone'
-  - adbc-driver-postgresql>=1.2.0 ; extra == 'all'
-  - adbc-driver-sqlite>=1.2.0 ; extra == 'all'
-  - beautifulsoup4>=4.12.3 ; extra == 'all'
-  - bottleneck>=1.4.2 ; extra == 'all'
+  - adbc-driver-postgresql>=1.7.0 ; extra == 'all'
+  - adbc-driver-sqlite>=1.7.0 ; extra == 'all'
+  - beautifulsoup4>=4.13.4 ; extra == 'all'
+  - bottleneck>=1.5.0 ; extra == 'all'
   - fastparquet>=2024.11.0 ; extra == 'all'
-  - fsspec>=2024.10.0 ; extra == 'all'
-  - gcsfs>=2024.10.0 ; extra == 'all'
+  - fsspec>=2025.7.0 ; extra == 'all'
+  - gcsfs>=2025.7.0 ; extra == 'all'
   - html5lib>=1.1 ; extra == 'all'
-  - hypothesis>=6.116.0 ; extra == 'all'
-  - jinja2>=3.1.5 ; extra == 'all'
-  - lxml>=5.3.0 ; extra == 'all'
-  - matplotlib>=3.9.3 ; extra == 'all'
-  - numba>=0.60.0 ; extra == 'all'
-  - numexpr>=2.10.2 ; extra == 'all'
+  - jinja2>=3.1.6 ; extra == 'all'
+  - lxml>=6.0.0 ; extra == 'all'
+  - matplotlib>=3.10.5 ; extra == 'all'
+  - numba>=0.61.2 ; extra == 'all'
+  - numexpr>=2.11.0,!=2.14.1 ; extra == 'all'
   - odfpy>=1.4.1 ; extra == 'all'
   - openpyxl>=3.1.5 ; extra == 'all'
   - psycopg2>=2.9.10 ; extra == 'all'
-  - pyarrow>=13.0.0 ; extra == 'all'
-  - pyiceberg>=0.8.1 ; extra == 'all'
+  - pyarrow>=16.0.0 ; extra == 'all'
+  - pyiceberg>=0.9.1 ; extra == 'all'
   - pymysql>=1.1.1 ; extra == 'all'
-  - pyqt5>=5.15.9 ; extra == 'all'
-  - pyreadstat>=1.2.8 ; extra == 'all'
+  - pyqt5>=5.15.11 ; extra == 'all'
+  - pyreadstat>=1.3.0 ; extra == 'all'
   - pytest>=8.3.4 ; extra == 'all'
   - pytest-xdist>=3.6.1 ; extra == 'all'
-  - python-calamine>=0.3.0 ; extra == 'all'
+  - python-calamine>=0.4.0 ; extra == 'all'
   - pytz>=2020.1 ; extra == 'all'
   - pyxlsb>=1.0.10 ; extra == 'all'
-  - qtpy>=2.4.2 ; extra == 'all'
-  - scipy>=1.14.1 ; extra == 'all'
-  - s3fs>=2024.10.0 ; extra == 'all'
-  - sqlalchemy>=2.0.36 ; extra == 'all'
-  - tables>=3.10.1 ; extra == 'all'
+  - qtpy>=2.4.3 ; extra == 'all'
+  - scipy>=1.16.1 ; extra == 'all'
+  - s3fs>=2025.7.0 ; extra == 'all'
+  - sqlalchemy>=2.0.42 ; extra == 'all'
+  - tables>=3.10.2 ; extra == 'all'
   - tabulate>=0.9.0 ; extra == 'all'
-  - xarray>=2024.10.0 ; extra == 'all'
-  - xlrd>=2.0.1 ; extra == 'all'
-  - xlsxwriter>=3.2.0 ; extra == 'all'
+  - xarray>=2025.7.1 ; extra == 'all'
+  - xlrd>=2.0.2 ; extra == 'all'
+  - xlsxwriter>=3.2.5 ; extra == 'all'
   - zstandard>=0.23.0 ; extra == 'all'
   requires_python: '>=3.11'
 - pypi: https://files.pythonhosted.org/packages/df/64/ff35eb9e54894cf471ff4716abd3c81eb0a0626869217ce3e6ba4ccf17d7/scipy-1.18.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -889,13 +901,6 @@ packages:
   requires_dist:
   - nvidia-cuda-nvrtc
   requires_python: '>=3'
-- pypi: https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl
-  name: python-dateutil
-  version: 2.9.0.post0
-  sha256: a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
-  requires_dist:
-  - six>=1.5
-  requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*'
 - pypi: https://files.pythonhosted.org/packages/fc/f4/dadfec469313c7f428efa7e84b4aba9732f813c13ea7131a24b7b008ef57/kiwisolver-1.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: kiwisolver
   version: 1.5.1

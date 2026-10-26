@@ -24,9 +24,13 @@ packages = ["src/maxcut_cudaq"]
 [tool.ruff]
 line-length = 100
 
+[tool.uv]
+exclude-newer = "2026-10-26T00:00:00Z"
+
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
+exclude-newer = "2026-10-26T00:00:00Z"
 
 [tool.pixi.dependencies]
 python = "3.12.*"
