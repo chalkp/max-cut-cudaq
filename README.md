@@ -1,6 +1,6 @@
 # max-cut-qiskit
 
-Qiskit fork of [max-cut-cudaq](https://github.com/chalkp/max-cut-cudaq) for
+Qiskit port of [max-cut-cudaq](https://github.com/chalkp/max-cut-cudaq) for
 running LR-QAOA on UTokyo's IBM Quantum System One (`ibm_kawasaki`). Device
 counts are scored against exact Qiskit Aer runs of the same angles, and both are
 cross-checked against upstream's CUDA-Q results. The simulator-only studies
@@ -29,9 +29,8 @@ against packages published before 2026-10-26 (`exclude-newer`).
 pixi install            # or: uv sync
 ```
 
-`compare` runs the CUDA-Q side in upstream's environment: the superproject when
-this repo is its `max-cut-qiskit` submodule, `../max-cut-cudaq` otherwise
-(`--cudaq PATH` to override).
+`compare` runs the CUDA-Q side in upstream's environment, `../max-cut-cudaq`
+unless `--cudaq PATH` says otherwise.
 
 ## The device
 

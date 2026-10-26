@@ -12,8 +12,8 @@ global phase e^{+i sum_k gamma_k sum wn}, taken out before comparing. Its
 get_unitary puts qubit 0 in the top bit, its states in the bottom bit.
 
 The CUDA-Q side needs its own environment, so this script calls itself there
-with --dump and reads the arrays back. Upstream is the superproject when this
-repo is checked out as its submodule, else ../max-cut-cudaq.
+with --dump and reads the arrays back. Upstream is ../max-cut-cudaq unless
+--cudaq says otherwise.
 
     compare_cudaq.py
     compare_cudaq.py --hardware results/hardware/sweep_fake_kawasaki_ideal.json
@@ -32,14 +32,7 @@ import time
 import numpy as np
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-UPSTREAM = next(
-    (
-        p
-        for p in (ROOT.parent, ROOT.parent / "max-cut-cudaq")
-        if (p / "src" / "maxcut_cudaq").is_dir()
-    ),
-    ROOT.parent / "max-cut-cudaq",
-)
+UPSTREAM = ROOT.parent / "max-cut-cudaq"
 FAMILIES = ["ring", "ramanujan", "clustered", "bipartite", "erdos_renyi", "euclidean", "dense"]
 WEIGHTS = np.array([1, 1, 1, 1, 1, 1, 2]) / 8  # dense twice as often
 
